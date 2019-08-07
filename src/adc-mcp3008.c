@@ -20,10 +20,10 @@
 #include <unistd.h>
 #include <peripheral_io.h>
 #include <tizen.h>
-#include <system_info.h>
-#include <string.h>
-#include "log.h"
+#include "as-log.h"
 
+#define SPI_BUS 0
+#define SPI_CS 0
 
 #define	MCP3008_SPEED 3600000
 #define MCP3008_BPW 8
@@ -45,44 +45,14 @@
 #define MCP3008_RX_WORD3_MASK 0xFF	/* 0b11111111 */
 #define UINT10_VALIDATION_MASK 0x3FF
 
-#define MODEL_NAME_KEY "http://tizen.org/system/model_name"
-#define MODEL_NAME_RPI3 "rpi3"
-#define MODEL_NAME_ARTIK "artik"
-
 static peripheral_spi_h MCP3008_H = NULL;
 static unsigned int ref_count = 0;
 
 int adc_mcp3008_init(void)
 {
 	int ret = 0;
-	int bus = -1;
-	char *model_name = NULL;
 
-	if (MCP3008_H) {
-		_D("SPI device aleady initialized [ref_count : %u]", ref_count);
-		ref_count++;
-		return 0;
-	}
-
-	system_info_get_platform_string(MODEL_NAME_KEY, &model_name);
-	if (!model_name) {
-		_E("fail to get model name");
-		return -1;
-	}
-
-	if (!strcmp(model_name, MODEL_NAME_RPI3)) {
-		bus = 0;
-	} else if (!strcmp(model_name, MODEL_NAME_ARTIK)) {
-		bus = 2;
-	} else {
-		_E("unknown model name : %s", model_name);
-		free(model_name);
-		return -1;
-	}
-	free(model_name);
-	model_name = NULL;
-
-	ret = peripheral_spi_open(bus, 0, &MCP3008_H);
+	ret = peripheral_spi_open(SPI_BUS, SPI_CS, &MCP3008_H);
 	if (PERIPHERAL_ERROR_NONE != ret) {
 		_E("spi open failed :%s ", get_error_message(ret));
 		return -1;
@@ -91,31 +61,31 @@ int adc_mcp3008_init(void)
 	ret = peripheral_spi_set_mode(MCP3008_H, PERIPHERAL_SPI_MODE_0);
 	if (PERIPHERAL_ERROR_NONE != ret) {
 		_E("peripheral_spi_set_mode failed :%s ", get_error_message(ret));
-		goto error_after_open;
+		goto ERROR_AFTER_OPEN;
 	}
 	ret = peripheral_spi_set_bit_order(MCP3008_H, PERIPHERAL_SPI_BIT_ORDER_MSB);
 	if (PERIPHERAL_ERROR_NONE != ret) {
 		_E("peripheral_spi_set_bit_order failed :%s ", get_error_message(ret));
-		goto error_after_open;
+		goto ERROR_AFTER_OPEN;
 	}
 
 	ret = peripheral_spi_set_bits_per_word(MCP3008_H, MCP3008_BPW);
 	if (PERIPHERAL_ERROR_NONE != ret) {
 		_E("peripheral_spi_set_bits_per_word failed :%s ", get_error_message(ret));
-		goto error_after_open;
+		goto ERROR_AFTER_OPEN;
 	}
 
 	ret = peripheral_spi_set_frequency(MCP3008_H, MCP3008_SPEED);
 	if (PERIPHERAL_ERROR_NONE != ret) {
 		_E("peripheral_spi_set_frequency failed :%s ", get_error_message(ret));
-		goto error_after_open;
+		goto ERROR_AFTER_OPEN;
 	}
 
 	ref_count++;
 
 	return 0;
 
-error_after_open:
+ERROR_AFTER_OPEN:
 	peripheral_spi_close(MCP3008_H);
 	MCP3008_H = NULL;
 	return -1;
