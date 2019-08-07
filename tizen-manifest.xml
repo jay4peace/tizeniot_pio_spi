@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<manifest xmlns="http://tizen.org/ns/packages" api-version="5.0" package="org.example.analog-sensor" version="1.0.0">
+    <profile name="iot-headless"/>
+    <service-application appid="org.example.analog-sensor" exec="analog-sensor" multiple="false" nodisplay="true" taskmanage="false" type="capp">
+        <label>analog-sensor</label>
+        <icon>analog-sensor.png</icon>
+    </service-application>
+    <privileges>
+        <privilege>http://tizen.org/privilege/peripheralio</privilege>
+    </privileges>
+</manifest>
