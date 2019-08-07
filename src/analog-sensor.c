@@ -1,32 +1,75 @@
 #include <tizen.h>
 #include <service_app.h>
+#include <glib.h>
+#include "as-log.h"
+#include "sound-sensor.h"
+
+#define GETTER_INTERVAL (5) //5ms
+
+typedef struct _app_data {
+	guint getter_id;
+}app_data;
+
+static gboolean __get_value(gpointer user_data)
+{
+	int ret = 0;
+	unsigned int value = 0;
+
+	app_data *ad = user_data;
+
+	if (!ad) {
+		_E("failed to get app_data");
+		service_app_exit();
+		return FALSE;
+	}
+
+	ret = sound_sensor_read(0, &value);
+	retv_if(ret != 0, TRUE);
+
+//	_D("sensor value - [%u]", value);
+
+	return TRUE;
+}
+
 
 static bool service_app_create(void *data)
 {
-    // Todo: add your code here.
     return true;
 }
 
 static void service_app_terminate(void *data)
 {
-    // Todo: add your code here.
+	sound_sensor_close();
     return;
 }
 
 static void service_app_control(app_control_h app_control, void *data)
 {
-    // Todo: add your code here.
+	app_data *ad = data;
+	ret_if(!ad);
+
+	if (ad->getter_id) {
+		g_source_remove(ad->getter_id);
+		ad->getter_id = 0;
+	}
+
+	ad->getter_id = g_timeout_add(GETTER_INTERVAL, __get_value, ad);
+	if (!ad->getter_id)
+		_E("Failed to add getter");
+
     return;
 }
 
 int main(int argc, char* argv[])
 {
-    char ad[50] = {0,};
+	app_data ad;
 	service_app_lifecycle_callback_s event_callback;
+
+	ad.getter_id = 0;
 
 	event_callback.create = service_app_create;
 	event_callback.terminate = service_app_terminate;
 	event_callback.app_control = service_app_control;
 
-	return service_app_main(argc, argv, &event_callback, ad);
+	return service_app_main(argc, argv, &event_callback, &ad);
 }
