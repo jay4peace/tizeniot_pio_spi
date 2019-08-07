@@ -16,8 +16,6 @@
  *
  ******************************************************************/
 
-#include <stdlib.h>
-#include <unistd.h>
 #include <peripheral_io.h>
 #include <tizen.h>
 #include "as-log.h"
