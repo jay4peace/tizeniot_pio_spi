@@ -20,35 +20,33 @@
 
 #include <tizen.h>
 #include <service_app.h>
-#include <glib.h>
+#include <Ecore.h>
 #include "as-log.h"
 #include "sound-sensor.h"
 
-#define GETTER_INTERVAL (5) //5ms
-
 typedef struct _app_data {
-	guint getter_id;
+	Ecore_Idler *idler;
 }app_data;
 
-static gboolean __get_value(gpointer user_data)
+static Eina_Bool __get_value(void *data)
 {
 	int ret = 0;
 	unsigned int value = 0;
 
-	app_data *ad = user_data;
+	app_data *ad = data;
 
 	if (!ad) {
 		_E("failed to get app_data");
 		service_app_exit();
-		return FALSE;
+		return ECORE_CALLBACK_CANCEL;
 	}
 
 	ret = sound_sensor_read(0, &value);
-	retv_if(ret != 0, TRUE);
+	retv_if(ret != 0, ECORE_CALLBACK_RENEW);
 
 //	_D("sensor value - [%u]", value);
 
-	return TRUE;
+	return ECORE_CALLBACK_RENEW;
 }
 
 
@@ -68,14 +66,14 @@ static void service_app_control(app_control_h app_control, void *data)
 	app_data *ad = data;
 	ret_if(!ad);
 
-	if (ad->getter_id) {
-		g_source_remove(ad->getter_id);
-		ad->getter_id = 0;
+	if (ad->idler) {
+		ecore_idler_del(ad->idler);
+		ad->idler = NULL;
 	}
 
-	ad->getter_id = g_timeout_add(GETTER_INTERVAL, __get_value, ad);
-	if (!ad->getter_id)
-		_E("Failed to add getter");
+	ad->idler = ecore_idler_add(__get_value, ad);
+	if (!ad->idler)
+		_E("Failed to add idler");
 
     return;
 }
@@ -85,7 +83,7 @@ int main(int argc, char* argv[])
 	app_data ad;
 	service_app_lifecycle_callback_s event_callback;
 
-	ad.getter_id = 0;
+	ad.idler = NULL;
 
 	event_callback.create = service_app_create;
 	event_callback.terminate = service_app_terminate;
