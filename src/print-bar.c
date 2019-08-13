@@ -159,5 +159,5 @@ void print_bar(unsigned int val)
 	if (val > BAR_VALUE_MAX)
 		val = BAR_VALUE_MAX;
 
-	dlog_print(DLOG_DEBUG, "SSENSOR", "%4u %s", val, log_bar[val/8]);
+	dlog_print(DLOG_DEBUG, "SSENSOR", "%4u %s", val, log_bar[(val/8 - 1)]);
 }
