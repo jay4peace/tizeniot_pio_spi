@@ -22,7 +22,7 @@
 
 #define BAR_VALUE_MAX 1023
 
-static const char log_bar[][128] =
+static const char log_bar[129][128] =
 {
 	"|",
 	"||",
@@ -159,5 +159,5 @@ void print_bar(unsigned int val)
 	if (val > BAR_VALUE_MAX)
 		val = BAR_VALUE_MAX;
 
-	dlog_print(DLOG_DEBUG, "SSENSOR", "%4u %s", val, log_bar[(val/8 - 1)]);
+	dlog_print(DLOG_DEBUG, "SSENSOR", "%4u %s", val, log_bar[val/8]);
 }
